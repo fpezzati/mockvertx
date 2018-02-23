@@ -1,0 +1,35 @@
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+hs_err_pid*
+.project
+org.eclipse.core.resources.prefs
+org.eclipse.m2e.core.prefs
+
+.classpath
+target/
+org.eclipse.jdt.core.prefs
+
+*/target
+
+# vertx.io stuff
+**/.vertx/*
+*/.vertx/*
+.vertx/*
+
+# eclipse subprojects
+**/.classpath
+*/.classpath
+.classpath
+
+**/.project
+*/.project
+.project
+
+**/.settings
+*/.settings
+.settings

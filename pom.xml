@@ -7,6 +7,8 @@
 
 	<properties>
 		<vertx>3.5.1</vertx>
+		<mockito>2.15.0</mockito>
+		<powermock>1.7.3</powermock>
 	</properties>
 
 	<dependencies>
@@ -46,7 +48,25 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>2.15.0</version>
+			<version>${mockito}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito2</artifactId>
+			<version>${powermock}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>${powermock}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4-rule-agent</artifactId>
+			<version>${powermock}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

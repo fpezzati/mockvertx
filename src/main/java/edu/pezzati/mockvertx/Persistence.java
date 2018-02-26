@@ -25,7 +25,7 @@ public class Persistence extends AbstractVerticle {
     private void messageHandler(Message<JsonObject> msg) {
 	mongo.findOne("documents", msg.body(), new JsonObject(), h -> {
 	    if (h.succeeded()) {
-		msg.reply(h.result());
+		msg.reply(JsonObject.mapFrom(h.result()));
 	    } else {
 		msg.fail(500, h.cause().getMessage());
 	    }

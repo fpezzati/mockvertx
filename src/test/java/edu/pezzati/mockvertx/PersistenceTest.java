@@ -17,6 +17,7 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import edu.pezzati.mockvertx.model.Doc;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
@@ -31,13 +32,16 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public class PersistenceTest {
 
     private MongoClient mongo;
+    private Vertx vertx;
 
     @Before
     public void initSingleTest(TestContext ctx) throws Exception {
+	vertx = Vertx.vertx();
 	mongo = Mockito.mock(MongoClient.class);
+	System.out.println("MongoClient mock: " + mongo.toString());
 	PowerMockito.mockStatic(MongoClient.class);
 	PowerMockito.when(MongoClient.createShared(Mockito.any(), Mockito.any())).thenReturn(mongo);
-	Vertx.vertx().deployVerticle(Persistence.class, new DeploymentOptions(), ctx.asyncAssertSuccess());
+	vertx.deployVerticle(Persistence.class, new DeploymentOptions(), ctx.asyncAssertSuccess());
     }
 
     @SuppressWarnings("unchecked")
@@ -47,20 +51,26 @@ public class PersistenceTest {
 	expected.setName("report");
 	expected.setPreview("loremipsum");
 	Message<JsonObject> msg = Mockito.mock(Message.class);
+	System.out.println("Message<JsonObject> mock: " + msg.toString());
 	Mockito.when(msg.body()).thenReturn(JsonObject.mapFrom(expected));
 	List<JsonObject> result = new ArrayList<>();
 	result.add(new JsonObject().put("name", "report").put("preview", "loremipsum"));
 	AsyncResult<List<JsonObject>> asyncResult = Mockito.mock(AsyncResult.class);
+	System.out.println("AsyncResult<List<JsonObject>> mock: " + asyncResult.toString());
 	Mockito.when(asyncResult.succeeded()).thenReturn(true);
 	Mockito.when(asyncResult.result()).thenReturn(result);
 	Mockito.doAnswer(new Answer<AsyncResult<List<JsonObject>>>() {
 	    @Override
 	    public AsyncResult<List<JsonObject>> answer(InvocationOnMock arg0) throws Throwable {
-		return asyncResult;
+		((Handler<AsyncResult<List<JsonObject>>>) arg0.getArgument(3)).handle(asyncResult);
+		return null;
 	    }
 	}).when(mongo).findOne(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 	Async async = ctx.async();
-	Vertx.vertx().eventBus().send("persistence", new JsonObject(), msgh -> {
+	vertx.eventBus().send("persistence", new JsonObject(), msgh -> {
+	    if (msgh.failed()) {
+		System.out.println(msgh.cause().getMessage());
+	    }
 	    ctx.assertTrue(msgh.succeeded());
 	    ctx.assertEquals(expected, msgh.result().body());
 	    async.awaitSuccess();

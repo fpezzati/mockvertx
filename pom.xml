@@ -7,7 +7,7 @@
 
 	<properties>
 		<vertx>3.5.1</vertx>
-		<mockito>2.15.0</mockito>
+		<mockito>2.8.9</mockito>
 		<powermock>1.7.3</powermock>
 	</properties>
 

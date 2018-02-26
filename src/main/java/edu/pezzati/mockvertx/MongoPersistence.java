@@ -6,7 +6,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
-public class Persistence extends AbstractVerticle {
+public class MongoPersistence extends AbstractVerticle {
 
     private MongoClient mongo;
     private String collection;
@@ -25,7 +25,7 @@ public class Persistence extends AbstractVerticle {
     private void messageHandler(Message<JsonObject> msg) {
 	mongo.findOne("documents", msg.body(), new JsonObject(), h -> {
 	    if (h.succeeded()) {
-		msg.reply(JsonObject.mapFrom(h.result()));
+		msg.reply(h.result());
 	    } else {
 		msg.fail(500, h.cause().getMessage());
 	    }

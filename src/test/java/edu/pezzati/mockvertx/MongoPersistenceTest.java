@@ -1,8 +1,5 @@
 package edu.pezzati.mockvertx;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,6 +17,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
@@ -29,7 +27,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(VertxUnitRunner.class)
 @PrepareForTest({ MongoClient.class })
-public class PersistenceTest {
+public class MongoPersistenceTest {
 
     private MongoClient mongo;
     private Vertx vertx;
@@ -41,7 +39,7 @@ public class PersistenceTest {
 	System.out.println("MongoClient mock: " + mongo.toString());
 	PowerMockito.mockStatic(MongoClient.class);
 	PowerMockito.when(MongoClient.createShared(Mockito.any(), Mockito.any())).thenReturn(mongo);
-	vertx.deployVerticle(Persistence.class, new DeploymentOptions(), ctx.asyncAssertSuccess());
+	vertx.deployVerticle(MongoPersistence.class, new DeploymentOptions(), ctx.asyncAssertSuccess());
     }
 
     @SuppressWarnings("unchecked")
@@ -53,16 +51,15 @@ public class PersistenceTest {
 	Message<JsonObject> msg = Mockito.mock(Message.class);
 	System.out.println("Message<JsonObject> mock: " + msg.toString());
 	Mockito.when(msg.body()).thenReturn(JsonObject.mapFrom(expected));
-	List<JsonObject> result = new ArrayList<>();
-	result.add(new JsonObject().put("name", "report").put("preview", "loremipsum"));
-	AsyncResult<List<JsonObject>> asyncResult = Mockito.mock(AsyncResult.class);
+	JsonObject result = new JsonObject().put("name", "report").put("preview", "loremipsum");
+	AsyncResult<JsonObject> asyncResult = Mockito.mock(AsyncResult.class);
 	System.out.println("AsyncResult<List<JsonObject>> mock: " + asyncResult.toString());
 	Mockito.when(asyncResult.succeeded()).thenReturn(true);
 	Mockito.when(asyncResult.result()).thenReturn(result);
-	Mockito.doAnswer(new Answer<AsyncResult<List<JsonObject>>>() {
+	Mockito.doAnswer(new Answer<AsyncResult<JsonObject>>() {
 	    @Override
-	    public AsyncResult<List<JsonObject>> answer(InvocationOnMock arg0) throws Throwable {
-		((Handler<AsyncResult<List<JsonObject>>>) arg0.getArgument(3)).handle(asyncResult);
+	    public AsyncResult<JsonObject> answer(InvocationOnMock arg0) throws Throwable {
+		((Handler<AsyncResult<JsonObject>>) arg0.getArgument(3)).handle(asyncResult);
 		return null;
 	    }
 	}).when(mongo).findOne(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -72,8 +69,8 @@ public class PersistenceTest {
 		System.out.println(msgh.cause().getMessage());
 	    }
 	    ctx.assertTrue(msgh.succeeded());
-	    ctx.assertEquals(expected, msgh.result().body());
-	    async.awaitSuccess();
+	    ctx.assertEquals(expected, Json.decodeValue(msgh.result().body().toString(), Doc.class));
+	    async.complete();
 	});
 	async.await();
     }

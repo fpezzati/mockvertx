@@ -19,11 +19,10 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
-import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLConnection;
 import io.vertx.ext.unit.Async;
@@ -42,26 +41,17 @@ public class MariaDbPersistenceTest {
     public void initSingleTest(TestContext ctx) throws Exception {
 	vertx = Vertx.vertx();
 	mariaDb = Mockito.mock(JDBCClient.class);
-	PowerMockito.mockStatic(MongoClient.class);
+	PowerMockito.mockStatic(JDBCClient.class);
 	PowerMockito.when(JDBCClient.createShared(Mockito.any(), Mockito.any())).thenReturn(mariaDb);
-	vertx.deployVerticle(MongoPersistence.class, new DeploymentOptions(), ctx.asyncAssertSuccess());
+	vertx.deployVerticle(MariaDbPersistence.class, new DeploymentOptions(), ctx.asyncAssertSuccess());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void loadSomeDocs(TestContext ctx) {
+    public void loadSomeDocs(TestContext ctx) throws Exception {
 	Doc expected = new Doc();
 	expected.setName("report");
 	expected.setPreview("loremipsum");
-	Message<JsonObject> msg = Mockito.mock(Message.class);
-	System.out.println("Message<JsonObject> mock: " + msg.toString());
-	Mockito.when(msg.body()).thenReturn(JsonObject.mapFrom(expected));
-	JsonObject result = new JsonObject().put("name", "report").put("preview", "loremipsum");
-	AsyncResult<JsonObject> asyncResult = Mockito.mock(AsyncResult.class);
-	System.out.println("AsyncResult<List<JsonObject>> mock: " + asyncResult.toString());
-	Mockito.when(asyncResult.succeeded()).thenReturn(true);
-	Mockito.when(asyncResult.result()).thenReturn(result);
-
 	List<JsonObject> list = new ArrayList<JsonObject>();
 	list.add(JsonObject.mapFrom(expected));
 	ResultSet resultSet = Mockito.mock(ResultSet.class);
@@ -93,7 +83,8 @@ public class MariaDbPersistenceTest {
 		System.out.println(msgh.cause().getMessage());
 	    }
 	    ctx.assertTrue(msgh.succeeded());
-	    ctx.assertEquals(expected, Json.decodeValue(msgh.result().body().toString(), Doc.class));
+	    JsonArray res = new JsonArray((String) msgh.result().body());
+	    ctx.assertEquals(expected, Json.decodeValue(res.getJsonObject(0).toString(), Doc.class));
 	    async.complete();
 	});
 	async.await();
